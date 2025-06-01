@@ -709,6 +709,22 @@ bool Recompiler::Recompile(
         println("\tif ({}.eq) return;", cr(insn.operands[0]));
         break;
 
+    case PPC_INST_BSO:
+        printConditionalBranch(false, "so");
+        break;
+
+    case PPC_INST_BSOLR:
+        println("\tif ({}.so) return;", cr(insn.operands[0]));
+        break;
+
+    case PPC_INST_BNS:
+        printConditionalBranch(true, "so");
+        break;
+
+    case PPC_INST_BNSLR:
+        println("\tif (!{}.so) return;", cr(insn.operands[0]));
+        break;
+
     case PPC_INST_BGE:
         printConditionalBranch(true, "lt");
         break;
@@ -1194,6 +1210,13 @@ bool Recompiler::Recompile(
         println("\t{}.u32 = PPC_LOAD_U32({});", temp(), ea());
         println("\t{}.u32 = {};", r(insn.operands[1]), ea());
         println("\t{}.f64 = double({}.f32);", f(insn.operands[0]), temp());
+        break;
+
+    case PPC_INST_LHBRX:
+        print("\t{}.u64 = __builtin_bswap16(PPC_LOAD_U16(", r(insn.operands[0]));
+        if (insn.operands[2] != 0)
+            print("{}.u32 + ", r(insn.operands[2]));
+        println("{}));", int32_t(insn.operands[1]));
         break;
 
     case PPC_INST_LHA:
