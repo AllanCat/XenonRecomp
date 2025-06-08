@@ -1,3 +1,7 @@
+#pragma once
+#include "ppc_config.h"
+#include "byteswap.h"
+
 #ifndef PPC_CONTEXT_H_INCLUDED
 #define PPC_CONTEXT_H_INCLUDED
 
@@ -21,15 +25,48 @@
 #define _MM_DENORMALS_ZERO_MASK 0x0040
 #endif
 
+#if defined(_MSC_VER)
+#include <windows.h>
+#define RESTRICT __restrict
+#else
+#define RESTRICT __restrict__
+#endif
+
 #define PPC_JOIN(x, y) x##y
 #define PPC_XSTRINGIFY(x) #x
 #define PPC_STRINGIFY(x) PPC_XSTRINGIFY(x)
-#define PPC_FUNC(x) void x(PPCContext& __restrict ctx, uint8_t* base)
+#define PPC_FUNC(x) void x(PPCContext& RESTRICT ctx, uint8_t* base)
 #define PPC_FUNC_IMPL(x) extern "C" PPC_FUNC(x)
 #define PPC_EXTERN_FUNC(x) extern PPC_FUNC(x)
-#define PPC_WEAK_FUNC(x) __attribute__((weak,noinline)) PPC_FUNC(x)
 
+#if defined(_MSC_VER)
+#define SYNC_BOOL_COMPARE_AND_SWAP32(ptr, oldval, newval) \
+    (InterlockedCompareExchange(reinterpret_cast<volatile long*>(ptr), static_cast<long>(newval), static_cast<long>(oldval)) == static_cast<long>(oldval))
+#define SYNC_BOOL_COMPARE_AND_SWAP64(ptr, oldval, newval) \
+    (InterlockedCompareExchange64(reinterpret_cast<volatile long long*>(ptr), static_cast<long long>(newval), static_cast<long long>(oldval)) == static_cast<long long>(oldval))
+#define BUILTIN_UNREACHABLE() __assume(0)
+#define ISNAN(x) _isnan(x)
+#define ROTATE_LEFT32(x, n) _rotl(x, n)
+#define ROTATE_LEFT64(x, n) _rotl64(x, n)
+#define COUNT_LEADING_ZEROS32(value) _lzcnt_u32(value)
+#define COUNT_LEADING_ZEROS64(value) _lzcnt_u64(value)
+#define DEBUG_TRAP() __debugbreak()
+#define PPC_WEAK_FUNC(x) __declspec(noinline) PPC_FUNC(x)
+#define PPC_FUNC_PROLOGUE() __assume(((size_t)base & 0x1F) == 0)
+#else
+#define SYNC_BOOL_COMPARE_AND_SWAP32(ptr, oldval, newval) __sync_bool_compare_and_swap(reinterpret_cast<uint32_t*>(ptr), static_cast<int32_t>(oldval), static_cast<uint32_t>(newval))
+#define SYNC_BOOL_COMPARE_AND_SWAP64(ptr, oldval, newval) __sync_bool_compare_and_swap(reinterpret_cast<uint64_t*>(ptr), static_cast<int64_t>(oldval), static_cast<uint64_t>(newval))
+#define BUILTIN_UNREACHABLE() __builtin_unreachable()
+#define ISNAN(x) __builtin_isnan(x)
+#define ROTATE_LEFT32(x, n) __builtin_rotateleft32(x, n)
+#define ROTATE_LEFT64(x, n) __builtin_rotateleft64(x, n)
+#define COUNT_LEADING_ZEROS32(value) __builtin_clz(value)
+#define COUNT_LEADING_ZEROS64(value) __builtin_clzll(value)
+#define DEBUG_TRAP() __builtin_debugtrap()
+#define PPC_WEAK_FUNC(x) __attribute__((weak,noinline)) PPC_FUNC(x)
 #define PPC_FUNC_PROLOGUE() __builtin_assume(((size_t)base & 0x1F) == 0)
+#endif
+
 
 #ifndef PPC_LOAD_U8
 #define PPC_LOAD_U8(x) *(volatile uint8_t*)(base + (x))
@@ -113,7 +150,7 @@
 #define PPC_CALL_INDIRECT_FUNC(x) (PPC_LOOKUP_FUNC(base, x))(ctx, base)
 #endif
 
-typedef void PPCFunc(struct PPCContext& __restrict__ ctx, uint8_t* base);
+typedef void PPCFunc(struct PPCContext& RESTRICT ctx, uint8_t* base);
 
 struct PPCFuncMapping
 {
@@ -166,7 +203,7 @@ struct PPCCRRegister
 
     inline void compare(double left, double right) noexcept
     {
-        un = __builtin_isnan(left) || __builtin_isnan(right);
+        un = ISNAN(left) || ISNAN(right);
         lt = !un && (left < right);
         gt = !un && (left > right);
         eq = !un && (left == right);
@@ -215,14 +252,14 @@ struct PPCFPSCRRegister
 {
     uint32_t csr;
 
-    static constexpr size_t HostToGuest[] = { PPC_ROUND_NEAREST, PPC_ROUND_DOWN, PPC_ROUND_UP, PPC_ROUND_TOWARD_ZERO };
+    static constexpr uint32_t HostToGuest[] = { PPC_ROUND_NEAREST, PPC_ROUND_DOWN, PPC_ROUND_UP, PPC_ROUND_TOWARD_ZERO };
 
     // simde does not handle denormal flags, so we need to implement per-arch.
 #if defined(__x86_64__) || defined(_M_X64)
-    static constexpr size_t RoundShift = 13;
-    static constexpr size_t RoundMask = SIMDE_MM_ROUND_MASK;
-    static constexpr size_t FlushMask = SIMDE_MM_FLUSH_ZERO_MASK | _MM_DENORMALS_ZERO_MASK;
-    static constexpr size_t GuestToHost[] = { SIMDE_MM_ROUND_NEAREST, SIMDE_MM_ROUND_TOWARD_ZERO, SIMDE_MM_ROUND_UP, SIMDE_MM_ROUND_DOWN };
+    static constexpr uint32_t RoundShift = 13;
+    static constexpr uint32_t RoundMask = SIMDE_MM_ROUND_MASK;
+    static constexpr uint32_t FlushMask = SIMDE_MM_FLUSH_ZERO_MASK | _MM_DENORMALS_ZERO_MASK;
+    static constexpr uint32_t GuestToHost[] = { SIMDE_MM_ROUND_NEAREST, SIMDE_MM_ROUND_TOWARD_ZERO, SIMDE_MM_ROUND_UP, SIMDE_MM_ROUND_DOWN };
 
     inline uint32_t getcsr() noexcept
     {
@@ -688,6 +725,7 @@ inline simde__m128i simde_mm_vsr(simde__m128i a, simde__m128i b)
     return simde_mm_castps_si128(simde_mm_insert_ps(simde_mm_castsi128_ps(simde_mm_srl_epi64(a, b)), simde_mm_castsi128_ps(simde_mm_srl_epi64(simde_mm_srli_si128(a, 4), b)), 0x10));
 }
 
+/*
 inline simde__m128i simde_mm_vctuxs(simde__m128 src1)
 {
     simde__m128 xmm0 = simde_mm_max_ps(src1, simde_mm_set1_epi32(0));
@@ -700,6 +738,7 @@ inline simde__m128i simde_mm_vctuxs(simde__m128 src1)
     dest = simde_mm_add_epi32(dest, xmm1);
     return simde_mm_or_si128(dest, xmm0);
 }
+*/
 
 #if defined(__aarch64__) || defined(_M_ARM64)
 inline uint64_t __rdtsc()
