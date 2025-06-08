@@ -1,7 +1,3 @@
-#pragma once
-#include "ppc_config.h"
-#include "byteswap.h"
-
 #ifndef PPC_CONTEXT_H_INCLUDED
 #define PPC_CONTEXT_H_INCLUDED
 
@@ -27,6 +23,7 @@
 
 #if defined(_MSC_VER)
 #include <windows.h>
+#include <intrin.h>
 #define RESTRICT __restrict
 #else
 #define RESTRICT __restrict__
@@ -50,6 +47,9 @@
 #define ROTATE_LEFT64(x, n) _rotl64(x, n)
 #define COUNT_LEADING_ZEROS32(value) _lzcnt_u32(value)
 #define COUNT_LEADING_ZEROS64(value) _lzcnt_u64(value)
+#define BSWAP16(x) _byteswap_ushort(x)
+#define BSWAP32(x) _byteswap_ulong(x)
+#define BSWAP64(x) _byteswap_uint64(x)
 #define DEBUG_TRAP() __debugbreak()
 #define PPC_WEAK_FUNC(x) __declspec(noinline) PPC_FUNC(x)
 #define PPC_FUNC_PROLOGUE() __assume(((size_t)base & 0x1F) == 0)
@@ -62,6 +62,9 @@
 #define ROTATE_LEFT64(x, n) __builtin_rotateleft64(x, n)
 #define COUNT_LEADING_ZEROS32(value) __builtin_clz(value)
 #define COUNT_LEADING_ZEROS64(value) __builtin_clzll(value)
+#define BSWAP16(x) __builtin_bswap16(x)
+#define BSWAP32(x) __builtin_bswap32(x)
+#define BSWAP64(x) __builtin_bswap64(x)
 #define DEBUG_TRAP() __builtin_debugtrap()
 #define PPC_WEAK_FUNC(x) __attribute__((weak,noinline)) PPC_FUNC(x)
 #define PPC_FUNC_PROLOGUE() __builtin_assume(((size_t)base & 0x1F) == 0)
