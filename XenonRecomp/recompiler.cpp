@@ -1126,7 +1126,7 @@ bool Recompiler::Recompile(
         if (insn.operands[1] != 0)
             print("{}.u32 + ", r(insn.operands[1]));
         println("{}.u32);", r(insn.operands[2]));
-        println("\t{}.u64 = __builtin_bswap64({}.u64);", r(insn.operands[0]), reserved());
+        println("\t{}.u64 = BSWAP64({}.u64);", r(insn.operands[0]), reserved());
         break;
 
     case PPC_INST_LDU:
@@ -1213,7 +1213,7 @@ bool Recompiler::Recompile(
         break;
 
     case PPC_INST_LHBRX:
-        print("\t{}.u64 = __builtin_bswap16(PPC_LOAD_U16(", r(insn.operands[0]));
+        print("\t{}.u64 = BSWAP16(PPC_LOAD_U16(", r(insn.operands[0]));
         if (insn.operands[1] != 0)
             print("{}.u32 + ", r(insn.operands[1]));
         println("{}.u32));", r(insn.operands[2]));
@@ -1334,7 +1334,7 @@ bool Recompiler::Recompile(
         if (insn.operands[1] != 0)
             print("{}.u32 + ", r(insn.operands[1]));
         println("{}.u32);", r(insn.operands[2]));
-        println("\t{}.u64 = __builtin_bswap32({}.u32);", r(insn.operands[0]), reserved());
+        println("\t{}.u64 = BSWAP32({}.u32);", r(insn.operands[0]), reserved());
         break;
 
     case PPC_INST_LWAX:
@@ -1345,7 +1345,7 @@ bool Recompiler::Recompile(
         break;
 
     case PPC_INST_LWBRX:
-        print("\t{}.u64 = __builtin_bswap32(PPC_LOAD_U32(", r(insn.operands[0]));
+        print("\t{}.u64 = BSWAP32(PPC_LOAD_U32(", r(insn.operands[0]));
         if (insn.operands[1] != 0)
             print("{}.u32 + ", r(insn.operands[1]));
         println("{}.u32));", r(insn.operands[2]));
@@ -1675,7 +1675,7 @@ bool Recompiler::Recompile(
         print("\t{}.eq = __sync_bool_compare_and_swap(reinterpret_cast<uint64_t*>(base + ", cr(0));
         if (insn.operands[1] != 0)
             print("{}.u32 + ", r(insn.operands[1]));
-        println("{}.u32), {}.s64, __builtin_bswap64({}.s64));", r(insn.operands[2]), reserved(), r(insn.operands[0]));
+        println("{}.u32), {}.s64, BSWAP64({}.s64));", r(insn.operands[2]), reserved(), r(insn.operands[0]));
         println("\t{}.so = {}.so;", cr(0), xer());
         break;
 
@@ -1786,7 +1786,7 @@ bool Recompiler::Recompile(
         print("{}", mmioStore() ? "\tPPC_MM_STORE_U16(" : "\tPPC_STORE_U16(");
         if (insn.operands[1] != 0)
             print("{}.u32 + ", r(insn.operands[1]));
-        println("{}.u32, __builtin_bswap16({}.u16));", r(insn.operands[2]), r(insn.operands[0]));
+        println("{}.u32, BSWAP16({}.u16));", r(insn.operands[2]), r(insn.operands[0]));
         break;
 
     case PPC_INST_STHX:
@@ -1866,7 +1866,7 @@ bool Recompiler::Recompile(
         print("{}", mmioStore() ? "\tPPC_MM_STORE_U32(" : "\tPPC_STORE_U32(");
         if (insn.operands[1] != 0)
             print("{}.u32 + ", r(insn.operands[1]));
-        println("{}.u32, __builtin_bswap32({}.u32));", r(insn.operands[2]), r(insn.operands[0]));
+        println("{}.u32, BSWAP32({}.u32));", r(insn.operands[2]), r(insn.operands[0]));
         break;
 
     case PPC_INST_STWCX:
@@ -1875,7 +1875,7 @@ bool Recompiler::Recompile(
         print("\t{}.eq = __sync_bool_compare_and_swap(reinterpret_cast<uint32_t*>(base + ", cr(0));
         if (insn.operands[1] != 0)
             print("{}.u32 + ", r(insn.operands[1]));
-        println("{}.u32), {}.s32, __builtin_bswap32({}.s32));", r(insn.operands[2]), reserved(), r(insn.operands[0]));
+        println("{}.u32), {}.s32, BSWAP32({}.s32));", r(insn.operands[2]), reserved(), r(insn.operands[0]));
         println("\t{}.so = {}.so;", cr(0), xer());
         break;
 

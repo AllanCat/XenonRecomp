@@ -36,15 +36,15 @@
 #endif
 
 #ifndef PPC_LOAD_U16
-#define PPC_LOAD_U16(x) __builtin_bswap16(*(volatile uint16_t*)(base + (x)))
+#define PPC_LOAD_U16(x) BSWAP16(*(volatile uint16_t*)(base + (x)))
 #endif
 
 #ifndef PPC_LOAD_U32
-#define PPC_LOAD_U32(x) __builtin_bswap32(*(volatile uint32_t*)(base + (x)))
+#define PPC_LOAD_U32(x) BSWAP32(*(volatile uint32_t*)(base + (x)))
 #endif
 
 #ifndef PPC_LOAD_U64
-#define PPC_LOAD_U64(x) __builtin_bswap64(*(volatile uint64_t*)(base + (x)))
+#define PPC_LOAD_U64(x) BSWAP64(*(volatile uint64_t*)(base + (x)))
 #endif
 
 // TODO: Implement.
@@ -72,15 +72,15 @@
 #endif
 
 #ifndef PPC_STORE_U16
-#define PPC_STORE_U16(x, y) *(volatile uint16_t*)(base + (x)) = __builtin_bswap16(y)
+#define PPC_STORE_U16(x, y) *(volatile uint16_t*)(base + (x)) = BSWAP16(y)
 #endif
 
 #ifndef PPC_STORE_U32
-#define PPC_STORE_U32(x, y) *(volatile uint32_t*)(base + (x)) = __builtin_bswap32(y)
+#define PPC_STORE_U32(x, y) *(volatile uint32_t*)(base + (x)) = BSWAP32(y)
 #endif
 
 #ifndef PPC_STORE_U64
-#define PPC_STORE_U64(x, y) *(volatile uint64_t*)(base + (x)) = __builtin_bswap64(y)
+#define PPC_STORE_U64(x, y) *(volatile uint64_t*)(base + (x)) = BSWAP64(y)
 #endif
 
 // MMIO Store handling is completely reliant on being preeceded by eieio.
